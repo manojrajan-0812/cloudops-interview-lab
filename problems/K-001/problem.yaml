@@ -1,0 +1,44 @@
+id: K-001
+title: "Liveness probe causes restart loop on slow-starting pod"
+level: mid
+layer: kubernetes
+
+files_in_play:
+  - k8s/deployment.yaml
+
+candidate_statement: |
+  The interview-api deployment keeps restarting. Pods briefly appear Running
+  but are killed before they finish starting up. The application log shows
+  it takes about 15 seconds to initialise.
+
+  Investigate k8s/deployment.yaml and fix the probe configuration.
+  Apply the fix and confirm pods become stable.
+
+  Hint: check `kubectl describe pod` output for clues.
+  Validate with: ./interview validate
+
+hints_interviewer_only:
+  - "livenessProbe.initialDelaySeconds is set to 1 — the app needs ~15s to start"
+  - "failureThreshold is 1 — one missed check immediately kills the pod"
+  - "Fix: raise initialDelaySeconds to at least 30, raise failureThreshold to 3"
+  - "Candidate should NOT remove the liveness probe — that's the wrong fix"
+
+expected_fix_summary: |
+  Increase livenessProbe.initialDelaySeconds to >= 30 and failureThreshold to >= 3
+  so the probe waits long enough for the app to start.
+
+common_wrong_fixes:
+  - "Removing the livenessProbe entirely (unsafe in production)"
+  - "Increasing only failureThreshold but not initialDelaySeconds (still restarts on startup)"
+  - "Fixing readinessProbe instead of livenessProbe"
+
+follow_ups:
+  - "What is the difference between liveness and readiness probes?"
+  - "What happens if you remove the liveness probe entirely?"
+  - "How would you detect this issue in production before users notice?"
+
+rubric_signals:
+  - kubernetes_understanding
+  - troubleshooting_root_cause
+  - validation_discipline
+  - claude_usage

@@ -1,0 +1,34 @@
+groups:
+  - name: interview-api.rules
+    rules:
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_requests_total{job="interview-api", status=~"5.."}[5m]))
+          /
+          sum(rate(http_requests_total{job="interview-api"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High HTTP error rate on interview-api"
+          description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes."
+
+      - alert: PodNotReady
+        expr: kube_pod_status_ready{namespace="default", condition="true"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Pod not ready"
+          description: "Pod {{ $labels.pod }} has been not ready for 2 minutes."
+
+      - alert: HighMemoryUsage
+        expr: |
+          container_memory_usage_bytes{namespace="default", container="api"}
+          / container_spec_memory_limit_bytes{namespace="default", container="api"} > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on interview-api"
+          description: "Memory usage is at {{ $value | humanizePercentage }} of the limit."

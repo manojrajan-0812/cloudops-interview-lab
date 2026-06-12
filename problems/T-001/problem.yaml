@@ -1,0 +1,45 @@
+id: T-001
+title: "Terraform plan shows destroy+recreate on every run due to volatile trigger"
+level: mid
+layer: terraform
+
+files_in_play:
+  - terraform/main.tf
+
+candidate_statement: |
+  Every time the team runs `terraform plan`, it shows that the `null_resource.deployment`
+  resource will be destroyed and recreated. This is causing unnecessary churn and
+  confusion about what is actually changing.
+
+  Run: cd terraform && terraform init && terraform plan
+
+  Investigate main.tf and fix the trigger so the resource is only recreated
+  when something meaningful actually changes.
+
+  Validate with: ./interview validate
+
+hints_interviewer_only:
+  - "triggers = { always_run = timestamp() } — timestamp() changes on every plan"
+  - "Fix: replace timestamp() with a stable value, e.g. the environment or version variable"
+  - "Wrong fix: removing triggers entirely (then changes never trigger recreation)"
+  - "Wrong fix: adding lifecycle { ignore_changes = all } (hides real changes)"
+
+expected_fix_summary: |
+  Replace always_run = timestamp() with a stable keeper, e.g.:
+    always_run = var.app_version
+  or remove the volatile trigger and use a meaningful one.
+
+common_wrong_fixes:
+  - "lifecycle { ignore_changes = [triggers] } — masks the problem"
+  - "Removing null_resource entirely (may be needed for other purposes)"
+  - "Using random_id instead (also volatile)"
+
+follow_ups:
+  - "What is the purpose of triggers in a null_resource?"
+  - "When is destroy+recreate acceptable vs. dangerous in Terraform?"
+  - "How would you catch this in a CI pipeline before it hits production?"
+
+rubric_signals:
+  - terraform_iac_understanding
+  - troubleshooting_root_cause
+  - claude_usage

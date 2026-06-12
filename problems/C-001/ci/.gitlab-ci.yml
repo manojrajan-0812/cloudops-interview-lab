@@ -1,0 +1,49 @@
+stages:
+  - test
+  - build
+  - deploy-staging
+  - deploy-production
+
+variables:
+  IMAGE_TAG: "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
+
+test:
+  stage: test
+  image: python:3.11-slim
+  script:
+    - pip install -r app/requirements.txt pytest
+    - pytest app/tests/ -v
+
+build:
+  stage: build
+  image: docker:24
+  services:
+    - docker:24-dind
+  script:
+    - docker build -f docker/Dockerfile -t "${IMAGE_TAG}" .
+    - docker push "${IMAGE_TAG}"
+  only:
+    - main
+
+deploy-staging:
+  stage: deploy-staging
+  image: bitnami/kubectl:latest
+  environment:
+    name: staging
+  script:
+    - kubectl set image deployment/interview-api api="${IMAGE_TAG}" -n staging
+    - kubectl rollout status deployment/interview-api -n staging
+  only:
+    - main
+
+# BUG: no 'when: manual' — this deploys automatically after staging passes
+deploy-production:
+  stage: deploy-production
+  image: bitnami/kubectl:latest
+  environment:
+    name: production
+  script:
+    - kubectl set image deployment/interview-api api="${IMAGE_TAG}" -n production
+    - kubectl rollout status deployment/interview-api -n production
+  only:
+    - main

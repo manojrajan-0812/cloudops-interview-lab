@@ -1,0 +1,43 @@
+id: C-001
+title: "CI pipeline auto-deploys to production on every merge — no manual gate"
+level: senior
+layer: cicd
+
+files_in_play:
+  - ci/.gitlab-ci.yml
+
+candidate_statement: |
+  An engineer accidentally merged a broken feature branch into main. The CI
+  pipeline automatically deployed it to production within 2 minutes, causing
+  a partial outage. There was no approval step before the production deploy.
+
+  Fix ci/.gitlab-ci.yml so the production deployment stage requires manual
+  approval before it runs.
+
+  Validate with: ./interview validate
+
+hints_interviewer_only:
+  - "deploy-production job has no 'when:' key — defaults to on_success (automatic)"
+  - "Fix: add 'when: manual' to the deploy-production job"
+  - "Better fix also: add 'allow_failure: false' to prevent the pipeline from auto-passing"
+  - "Wrong fix: removing the deploy-production stage entirely"
+  - "Wrong fix: adding 'only: tags' without a manual gate (auto-deploys on tags)"
+
+expected_fix_summary: |
+  Add `when: manual` to the deploy-production job.
+  Optionally add `allow_failure: false` to make manual approval explicit.
+
+common_wrong_fixes:
+  - "Removing the stage (no deploy mechanism at all)"
+  - "Adding only: tags (auto-deploys on every tag push)"
+  - "Adding a separate approval job without gating deploy-production on it"
+
+follow_ups:
+  - "What is the difference between 'when: manual' and protected environments in GitLab?"
+  - "How would you require a second approver (not just the person who merged)?"
+  - "What else would you add to this pipeline to make it production-safe?"
+
+rubric_signals:
+  - cicd_understanding
+  - security_awareness
+  - operational_thinking

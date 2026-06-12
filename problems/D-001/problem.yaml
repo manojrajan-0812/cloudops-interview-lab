@@ -1,0 +1,40 @@
+id: D-001
+title: "Dockerfile: unpinned base image and root user"
+level: mid
+layer: docker
+files_in_play:
+  - docker/Dockerfile
+
+candidate_statement: |
+  The team has flagged docker/Dockerfile for two security concerns raised in a recent
+  audit. The CI pipeline is also failing a container-security gate.
+
+  Investigate the Dockerfile and fix any security anti-patterns you find.
+  After fixing, rebuild the image and confirm it runs correctly.
+
+  Tools available: docker, cat, grep
+  Validate with: ./interview validate
+
+hints_interviewer_only:
+  - "FROM python:latest — unpinned, changes under your feet and fails security scans"
+  - "No USER directive — container runs as root, which violates least-privilege"
+  - "Fix: pin to python:3.11-slim and add adduser + USER"
+
+expected_fix_summary: |
+  Pin base image to python:3.11-slim (or any stable non-latest tag).
+  Add a non-root user and switch to it before CMD.
+
+common_wrong_fixes:
+  - "Pinning to python:3 (still not specific enough — 3.x will change)"
+  - "Adding USER root explicitly (makes it worse)"
+  - "Removing the FROM line entirely"
+
+follow_ups:
+  - "Why is 'latest' dangerous in production Dockerfiles?"
+  - "What is the blast radius if the image runs as root and gets exploited?"
+  - "How would you enforce this across all team Dockerfiles?"
+
+rubric_signals:
+  - docker_understanding
+  - security_awareness
+  - claude_usage

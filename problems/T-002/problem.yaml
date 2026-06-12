@@ -1,0 +1,50 @@
+id: T-002
+title: "Terraform state stored locally — no locking, no team visibility"
+level: senior
+layer: terraform
+
+files_in_play:
+  - terraform/backend.tf
+
+candidate_statement: |
+  The team has reported that two engineers ran `terraform apply` at the same time
+  last week and corrupted the state file. Investigation shows the Terraform backend
+  is configured to store state locally on each engineer's machine.
+
+  Fix the backend configuration to use a remote backend with state locking.
+  For this lab, configure it for GCS (Google Cloud Storage) using:
+    bucket: "interview-lab-tfstate"
+    prefix: "interview-api/state"
+
+  Note: you don't need a real GCS bucket — the validator checks the configuration only.
+
+  After changing the backend, what command would you run to migrate existing state?
+
+  Validate with: ./interview validate
+
+hints_interviewer_only:
+  - "backend.tf has backend 'local' {} or is missing entirely"
+  - "Fix: replace with backend 'gcs' { bucket = ..., prefix = ... }"
+  - "Wrong fix: suggesting 'terraform state push' before reinitialising"
+  - "Correct migration: terraform init -migrate-state (not state push)"
+  - "Claude may suggest the wrong migration sequence — senior candidate catches this"
+
+expected_fix_summary: |
+  backend.tf should contain:
+    terraform { backend "gcs" { bucket = "interview-lab-tfstate", prefix = "interview-api/state" } }
+  Migration command: terraform init -migrate-state
+
+common_wrong_fixes:
+  - "terraform state push (wrong order — must init first)"
+  - "Using S3 backend without explaining why (acceptable but should justify)"
+  - "Adding locking via a DynamoDB table without switching backend (partial fix)"
+
+follow_ups:
+  - "What problems does remote state solve that local state doesn't?"
+  - "What is state locking and why does it matter?"
+  - "What is the correct sequence to migrate from local to remote backend?"
+
+rubric_signals:
+  - terraform_iac_understanding
+  - operational_thinking
+  - judgment_right_vs_convenient_fix

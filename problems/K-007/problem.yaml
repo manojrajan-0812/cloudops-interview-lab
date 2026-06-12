@@ -1,0 +1,44 @@
+id: K-007
+title: "ServiceAccount bound to cluster-admin — violates least privilege"
+level: senior
+layer: kubernetes-rbac
+
+files_in_play:
+  - k8s/rbac.yaml
+
+candidate_statement: |
+  A security audit found that the interview-api ServiceAccount has cluster-admin
+  privileges. The application only needs to read ConfigMaps in its own namespace.
+
+  Fix k8s/rbac.yaml to follow the principle of least privilege.
+  The ServiceAccount should only be able to get, list, and watch ConfigMaps
+  in the default namespace.
+
+  Validate with: ./interview validate
+
+hints_interviewer_only:
+  - "rbac.yaml has a ClusterRoleBinding to cluster-admin"
+  - "Fix: delete the ClusterRoleBinding, create a Role (not ClusterRole) with limited verbs, create a RoleBinding"
+  - "Wrong fix: creating a Role with verbs: ['*'] (still over-privileged)"
+  - "Wrong fix: creating a ClusterRole instead of namespace-scoped Role"
+  - "Claude commonly suggests a Role with apiGroups: ['*'] — that's wrong"
+
+expected_fix_summary: |
+  Replace ClusterRoleBinding+cluster-admin with:
+  - Role with rules: apiGroups=[""], resources=["configmaps"], verbs=["get","list","watch"]
+  - RoleBinding in default namespace
+
+common_wrong_fixes:
+  - "Using ClusterRole + ClusterRoleBinding (namespace-scoped is correct here)"
+  - "verbs: ['*'] in the new Role"
+  - "resources: ['*'] in the new Role"
+
+follow_ups:
+  - "What is the difference between a Role and a ClusterRole?"
+  - "Why is cluster-admin so dangerous for an application ServiceAccount?"
+  - "How would you audit all cluster-admin bindings in a real cluster?"
+
+rubric_signals:
+  - kubernetes_understanding
+  - security_awareness
+  - judgment_right_vs_convenient_fix

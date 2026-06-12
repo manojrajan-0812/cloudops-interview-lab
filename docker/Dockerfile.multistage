@@ -1,0 +1,23 @@
+# Working baseline — multi-stage build, secrets NOT leaked into runtime image
+FROM python:3.11-slim AS builder
+
+WORKDIR /build
+
+# Use ARG (not ENV) so the secret never persists into runtime layer
+ARG PIP_EXTRA_INDEX_URL=""
+COPY app/requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# ---- runtime stage ----
+FROM python:3.11-slim AS runtime
+
+WORKDIR /app
+
+COPY --from=builder /install /usr/local
+COPY app/ .
+
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+USER appuser
+
+EXPOSE 8080
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "2", "app:app"]

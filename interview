@@ -1,0 +1,344 @@
+#!/usr/bin/env python3
+"""CloudOps Interview Lab — runner CLI.
+
+Usage:
+  ./interview start --level mid|senior
+  ./interview validate
+  ./interview next [--force]
+  ./interview status
+  ./interview reset
+"""
+
+import argparse
+import importlib.util
+import json
+import os
+import random
+import shutil
+import subprocess
+import sys
+import time
+from datetime import datetime
+from pathlib import Path
+
+import yaml
+
+REPO_ROOT = Path(__file__).parent.resolve()
+STATE_FILE = REPO_ROOT / ".interview-state"
+PROBLEMS_DIR = REPO_ROOT / "problems"
+
+# ─── Problem composition rules ─────────────────────────────────────────────
+
+LEVEL_POOLS = {
+    "mid": {
+        "ids": ["D-001", "K-001", "K-002", "K-003", "K-004", "T-001", "M-001"],
+        "count": 5,
+        "rules": {},  # pick any 5 from the mid pool
+    },
+    "senior": {
+        "ids": ["D-001", "K-001", "K-002", "K-003", "K-004", "T-001", "M-001",
+                "D-002", "K-005", "K-006", "K-007", "K-008", "K-009", "T-002", "C-001"],
+        "senior_ids": ["D-002", "K-005", "K-006", "K-007", "K-008", "K-009", "T-002", "C-001"],
+        "mid_ids": ["D-001", "K-001", "K-002", "K-003", "K-004", "T-001", "M-001"],
+        "count": 5,
+        "senior_count": 3,
+        "mid_count": 2,
+    },
+}
+
+VALIDATOR_MAP = {
+    "D-001": "tools.validators.d_001",
+    "D-002": "tools.validators.d_002",
+    "K-001": "tools.validators.k_001",
+    "K-002": "tools.validators.k_002",
+    "K-003": "tools.validators.k_003",
+    "K-004": "tools.validators.k_004",
+    "K-005": "tools.validators.k_005",
+    "K-006": "tools.validators.k_006",
+    "K-007": "tools.validators.k_007",
+    "K-008": "tools.validators.k_008",
+    "K-009": "tools.validators.k_009",
+    "T-001": "tools.validators.t_001",
+    "T-002": "tools.validators.t_002",
+    "C-001": "tools.validators.c_001",
+    "M-001": "tools.validators.m_001",
+}
+
+# ─── Helpers ───────────────────────────────────────────────────────────────
+
+def load_state():
+    if not STATE_FILE.exists():
+        return None
+    return json.loads(STATE_FILE.read_text())
+
+
+def save_state(state):
+    STATE_FILE.write_text(json.dumps(state, indent=2))
+
+
+def load_problem(problem_id):
+    path = PROBLEMS_DIR / problem_id / "problem.yaml"
+    with open(path) as f:
+        return yaml.safe_load(f)
+
+
+def apply_problem(problem_id):
+    """Copy the problem's broken files into the working tree."""
+    problem_dir = PROBLEMS_DIR / problem_id
+    for item in problem_dir.iterdir():
+        if item.name == "problem.yaml":
+            continue
+        dest_base = REPO_ROOT / item.name
+        if item.is_dir():
+            # Copy each file in the subdirectory
+            for src_file in item.rglob("*"):
+                if src_file.is_file():
+                    rel = src_file.relative_to(item)
+                    dest = dest_base / rel
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(src_file, dest)
+        else:
+            shutil.copy2(item, dest_base)
+
+
+def pick_problems(level):
+    cfg = LEVEL_POOLS[level]
+    if level == "mid":
+        pool = cfg["ids"]
+        chosen = random.sample(pool, min(cfg["count"], len(pool)))
+    else:
+        seniors = random.sample(cfg["senior_ids"], cfg["senior_count"])
+        mids = random.sample(cfg["mid_ids"], cfg["mid_count"])
+        chosen = seniors + mids
+        random.shuffle(chosen)
+    return chosen
+
+
+def run_validator(problem_id):
+    module_name = VALIDATOR_MAP.get(problem_id)
+    if not module_name:
+        return False, f"No validator registered for {problem_id}"
+
+    # Add repo root to path so imports work
+    if str(REPO_ROOT) not in sys.path:
+        sys.path.insert(0, str(REPO_ROOT))
+
+    try:
+        mod = importlib.import_module(module_name)
+        importlib.reload(mod)
+        passed, message = mod.validate()
+        return passed, message
+    except Exception as e:
+        return False, f"Validator error: {e}"
+
+
+def elapsed(started_at):
+    delta = int(time.time() - started_at)
+    m, s = divmod(delta, 60)
+    return f"{m}m {s:02d}s"
+
+
+def print_problem(problem_id, index, total):
+    prob = load_problem(problem_id)
+    print()
+    print("=" * 60)
+    print(f"  Problem {index}/{total}  ·  {prob['id']}  ·  [{prob['level'].upper()}]")
+    print(f"  {prob['title']}")
+    print("=" * 60)
+    print()
+    print(prob["candidate_statement"].strip())
+    print()
+    print("─" * 60)
+    print()
+
+# ─── Commands ──────────────────────────────────────────────────────────────
+
+def cmd_start(args):
+    level = args.level
+    if level not in LEVEL_POOLS:
+        print(f"❌ Unknown level '{level}'. Use: mid or senior")
+        sys.exit(1)
+
+    # Check working tree is clean
+    result = subprocess.run(
+        ["git", "status", "--porcelain"],
+        cwd=REPO_ROOT, capture_output=True, text=True
+    )
+    if result.stdout.strip():
+        print("❌ Working tree is not clean. Run './interview reset' first.")
+        sys.exit(1)
+
+    queue = pick_problems(level)
+    state = {
+        "level": level,
+        "queue": queue,
+        "current_idx": 0,
+        "started_at": time.time(),
+        "attempts": {},
+        "solved": [],
+    }
+    save_state(state)
+
+    problem_id = queue[0]
+    apply_problem(problem_id)
+
+    print(f"\n🚀 Interview started — level: {level.upper()}")
+    print(f"   {len(queue)} problems assigned. Good luck!\n")
+    print_problem(problem_id, 1, len(queue))
+
+
+def cmd_validate(args):
+    state = load_state()
+    if not state:
+        print("❌ No active interview session. Run './interview start' first.")
+        sys.exit(1)
+
+    idx = state["current_idx"]
+    problem_id = state["queue"][idx]
+    total = len(state["queue"])
+
+    state["attempts"].setdefault(problem_id, 0)
+    state["attempts"][problem_id] += 1
+    save_state(state)
+
+    print(f"\n🔍 Validating {problem_id} (attempt {state['attempts'][problem_id]})...")
+    passed, message = run_validator(problem_id)
+
+    if passed:
+        state["solved"].append(problem_id)
+        save_state(state)
+        print(f"\n✅ Problem solved successfully.")
+        print(f"   {message}")
+        remaining = total - idx - 1
+        if remaining > 0:
+            print(f"\n   Run './interview next' to continue ({remaining} problem(s) remaining).")
+        else:
+            elapsed_str = elapsed(state["started_at"])
+            print(f"\n🎉 All {total} problems complete! Total time: {elapsed_str}")
+            solved_count = len(state["solved"])
+            print(f"   Solved: {solved_count}/{total}")
+    else:
+        print(f"\n❌ Validation failed.")
+        print(f"   {message}")
+        print(f"\n   Review the files, fix the issue, and run './interview validate' again.")
+
+
+def cmd_next(args):
+    state = load_state()
+    if not state:
+        print("❌ No active session. Run './interview start'.")
+        sys.exit(1)
+
+    idx = state["current_idx"]
+    problem_id = state["queue"][idx]
+    total = len(state["queue"])
+
+    if problem_id not in state.get("solved", []) and not args.force:
+        print(f"❌ {problem_id} has not been validated yet.")
+        print("   Run './interview validate' first, or use '--force' to skip (interviewer only).")
+        sys.exit(1)
+
+    if idx + 1 >= total:
+        print("✅ You are on the last problem. Run './interview validate' to complete it.")
+        return
+
+    state["current_idx"] = idx + 1
+    save_state(state)
+
+    next_id = state["queue"][state["current_idx"]]
+    apply_problem(next_id)
+    print_problem(next_id, state["current_idx"] + 1, total)
+
+
+def cmd_status(args):
+    state = load_state()
+    if not state:
+        print("No active interview session.")
+        return
+
+    idx = state["current_idx"]
+    total = len(state["queue"])
+    current_id = state["queue"][idx]
+    solved = state.get("solved", [])
+    elapsed_str = elapsed(state["started_at"])
+
+    print(f"\n📊 Interview Status")
+    print(f"   Level    : {state['level'].upper()}")
+    print(f"   Elapsed  : {elapsed_str}")
+    print(f"   Progress : {len(solved)}/{total} solved")
+    print(f"   Current  : Problem {idx+1}/{total} — {current_id}")
+    print()
+    for i, pid in enumerate(state["queue"]):
+        status = "✅" if pid in solved else ("▶️ " if i == idx else "⬜")
+        attempts = state["attempts"].get(pid, 0)
+        attempt_str = f"  ({attempts} attempt{'s' if attempts != 1 else ''})" if attempts else ""
+        print(f"   {status} {i+1}. {pid}{attempt_str}")
+    print()
+
+
+def cmd_reset(args):
+    print("🔄 Resetting interview environment...")
+
+    # Restore all git-tracked files
+    subprocess.run(["git", "reset", "--hard", "HEAD"], cwd=REPO_ROOT, check=True)
+    subprocess.run(["git", "clean", "-fdx",
+                    "--exclude=.interview-state",
+                    "--exclude=terraform/output/",
+                    "--exclude=.claude/"],
+                   cwd=REPO_ROOT, check=True)
+
+    # Remove state file
+    if STATE_FILE.exists():
+        STATE_FILE.unlink()
+
+    print("✅ Interview environment reset successfully.")
+    print("   Working tree restored to clean baseline.")
+    print("   Ready for next candidate.\n")
+
+
+# ─── Entrypoint ────────────────────────────────────────────────────────────
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="CloudOps Interview Lab runner",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Commands:
+  start --level mid|senior   Assign 5 random problems and begin the interview
+  validate                   Check if the current problem is correctly fixed
+  next [--force]             Move to the next problem (--force skips validation)
+  status                     Show current progress and elapsed time
+  reset                      Restore the environment for the next candidate
+        """
+    )
+    sub = parser.add_subparsers(dest="command")
+
+    p_start = sub.add_parser("start")
+    p_start.add_argument("--level", required=True, choices=["mid", "senior"])
+
+    sub.add_parser("validate")
+
+    p_next = sub.add_parser("next")
+    p_next.add_argument("--force", action="store_true",
+                        help="Skip validation check (interviewer use only)")
+
+    sub.add_parser("status")
+    sub.add_parser("reset")
+
+    args = parser.parse_args()
+    if not args.command:
+        parser.print_help()
+        sys.exit(0)
+
+    dispatch = {
+        "start": cmd_start,
+        "validate": cmd_validate,
+        "next": cmd_next,
+        "status": cmd_status,
+        "reset": cmd_reset,
+    }
+    dispatch[args.command](args)
+
+
+if __name__ == "__main__":
+    main()

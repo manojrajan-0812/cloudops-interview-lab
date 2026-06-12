@@ -1,0 +1,23 @@
+# Interview state
+.interview-state
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/output/
+terraform/.terraform.lock.hcl
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# Misc
+.DS_Store
+*.log
+/tmp/

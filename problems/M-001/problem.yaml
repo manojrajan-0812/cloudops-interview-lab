@@ -1,0 +1,45 @@
+id: M-001
+title: "Prometheus alert fires on every single error — too noisy to be actionable"
+level: mid
+layer: monitoring
+
+files_in_play:
+  - monitoring/prometheus-rules.yaml
+
+candidate_statement: |
+  The on-call team is being paged dozens of times per day by the HighErrorRate
+  alert. Investigation shows a single HTTP 500 error triggers the alert immediately,
+  even during normal operation (occasional errors are expected).
+
+  Fix the alert in monitoring/prometheus-rules.yaml to:
+  1. Only fire when the error rate exceeds 5% (not on a single error)
+  2. Require the condition to persist for at least 5 minutes before paging
+  3. Use proper grouping so alerts are per-service, not per individual request
+
+  Validate with: ./interview validate
+
+hints_interviewer_only:
+  - "Current expr: rate(http_requests_total{status='500'}[5m]) > 0 — fires on a single error"
+  - "No 'for:' clause — pages immediately on first occurrence"
+  - "Fix: use sum(rate(...)) / sum(rate(total[5m])) > 0.05 with for: 5m"
+  - "Wrong fix: just adding 'for: 5m' without fixing the threshold expression"
+
+expected_fix_summary: |
+  expr: sum(rate(http_requests_total{job="interview-api",status=~"5.."}[5m]))
+        / sum(rate(http_requests_total{job="interview-api"}[5m])) > 0.05
+  for: 5m
+
+common_wrong_fixes:
+  - "Only adding 'for: 5m' without changing the threshold (still fires on any error after 5 min)"
+  - "Threshold of 0.5 instead of 0.05 (50% error rate — far too permissive)"
+  - "Removing the alert entirely"
+
+follow_ups:
+  - "What is the difference between 'rate' and 'irate' in Prometheus?"
+  - "Why divide by total requests rather than using a raw count threshold?"
+  - "How would you test a Prometheus alerting rule before deploying it?"
+
+rubric_signals:
+  - monitoring_observability
+  - operational_thinking
+  - claude_usage

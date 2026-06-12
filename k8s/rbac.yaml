@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: interview-api-sa
+  namespace: default
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: interview-api-role
+  namespace: default
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: interview-api-rolebinding
+  namespace: default
+subjects:
+  - kind: ServiceAccount
+    name: interview-api-sa
+    namespace: default
+roleRef:
+  kind: Role
+  apiRef: rbac.authorization.k8s.io
+  name: interview-api-role

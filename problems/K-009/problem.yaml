@@ -1,0 +1,46 @@
+id: K-009
+title: "API key stored in ConfigMap instead of Secret"
+level: senior
+layer: kubernetes-security
+
+files_in_play:
+  - k8s/configmap.yaml
+  - k8s/secret.yaml
+  - k8s/deployment.yaml
+
+candidate_statement: |
+  A security review flagged that the API_KEY for the interview-api is stored
+  in a Kubernetes ConfigMap, not a Secret. ConfigMaps are not encrypted at rest
+  by default and are readable by any pod in the namespace that can read ConfigMaps.
+
+  Move the API_KEY to the existing Secret (k8s/secret.yaml) and update the
+  deployment to read it from there.
+
+  Validate with: ./interview validate
+
+hints_interviewer_only:
+  - "configmap.yaml has API_KEY: supersecret123 in plaintext"
+  - "Fix: remove API_KEY from configmap.yaml"
+  - "Fix: add API_KEY (base64 encoded) to secret.yaml"
+  - "Fix: update deployment.yaml envFrom or env to reference the secret"
+  - "Note: the secret already exists and has envFrom in the baseline deployment"
+
+expected_fix_summary: |
+  Remove API_KEY from ConfigMap.
+  Add API_KEY: <base64> to Secret data.
+  Deployment already uses secretRef — no change needed there if secret name matches.
+
+common_wrong_fixes:
+  - "Leaving API_KEY in ConfigMap AND adding it to Secret (duplication, still leaks)"
+  - "Hardcoding the key in the deployment env block"
+  - "Base64-encoding the value but leaving it in the ConfigMap"
+
+follow_ups:
+  - "Are Kubernetes Secrets actually secret? What are their limitations?"
+  - "What additional controls would you add to truly protect a secret value in Kubernetes?"
+  - "How do tools like Vault or Sealed Secrets improve on native Kubernetes Secrets?"
+
+rubric_signals:
+  - kubernetes_understanding
+  - security_awareness
+  - operational_thinking

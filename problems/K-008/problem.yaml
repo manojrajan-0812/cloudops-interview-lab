@@ -1,0 +1,44 @@
+id: K-008
+title: "Pod runs privileged as root — unnecessary and unsafe"
+level: senior
+layer: kubernetes-security
+
+files_in_play:
+  - k8s/deployment.yaml
+
+candidate_statement: |
+  A container security scan flagged the interview-api deployment:
+  - Pod is running with privileged: true
+  - Container runs as root (UID 0)
+  - allowPrivilegeEscalation is not disabled
+
+  The application does not need any of these privileges. Fix the deployment's
+  security context to harden the pod.
+
+  Validate with: ./interview validate
+
+hints_interviewer_only:
+  - "securityContext at pod level: runAsUser: 0 (root)"
+  - "securityContext at container level: privileged: true"
+  - "Fix: remove privileged, set runAsNonRoot: true, runAsUser: 1000, allowPrivilegeEscalation: false"
+  - "Wrong fix: only setting runAsNonRoot: true while leaving privileged: true"
+  - "Wrong fix: removing securityContext entirely"
+
+expected_fix_summary: |
+  Pod-level: runAsNonRoot: true, runAsUser: 1000 (non-zero)
+  Container-level: privileged: false (or remove), allowPrivilegeEscalation: false, capabilities.drop: [ALL]
+
+common_wrong_fixes:
+  - "Only setting runAsNonRoot (doesn't remove privileged)"
+  - "Setting runAsUser: 65534 (nobody) without other fixes"
+  - "Removing the securityContext block entirely"
+
+follow_ups:
+  - "What can an attacker do with a privileged container that they can't do otherwise?"
+  - "What is allowPrivilegeEscalation and why should it be false?"
+  - "How would you enforce this across all deployments using admission control?"
+
+rubric_signals:
+  - kubernetes_understanding
+  - security_awareness
+  - judgment_right_vs_convenient_fix

@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: interview-api
+  namespace: default
+  labels:
+    app: interview-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: interview-api
+  template:
+    metadata:
+      labels:
+        app: interview-api
+    spec:
+      serviceAccountName: interview-api-sa
+      # BUG: running as root
+      securityContext:
+        runAsUser: 0
+        fsGroup: 0
+      containers:
+        - name: api
+          image: interview-api:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_PATH
+              value: /tmp/interview.db
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
+          # BUG: privileged: true + no allowPrivilegeEscalation: false
+          securityContext:
+            privileged: true
+            allowPrivilegeEscalation: true

@@ -1,0 +1,40 @@
+id: K-002
+title: "Service selector doesn't match deployment labels — 502 on all requests"
+level: mid
+layer: kubernetes
+
+files_in_play:
+  - k8s/service.yaml
+  - k8s/deployment.yaml
+
+candidate_statement: |
+  The interview-api service is returning 502 Bad Gateway for all requests,
+  even though the pods show as Running. The ingress is configured correctly.
+
+  Investigate the Kubernetes manifests and fix the routing issue.
+  Validate with: ./interview validate
+
+hints_interviewer_only:
+  - "service.yaml selector: app: api-service"
+  - "deployment.yaml template labels: app: interview-api"
+  - "These don't match — Service can't find any endpoints"
+  - "Fix: align them (either change service selector or deployment label)"
+
+expected_fix_summary: |
+  Change service.yaml selector.app to match deployment label app: interview-api
+  (or vice versa — consistency is what matters).
+
+common_wrong_fixes:
+  - "Restarting the pods (doesn't fix the selector)"
+  - "Changing imagePullPolicy (unrelated)"
+  - "Adding a new service instead of fixing the existing one"
+
+follow_ups:
+  - "How would you verify which pods a Service is sending traffic to?"
+  - "What command shows you a Service's endpoints?"
+  - "How would you catch this in CI before deploying?"
+
+rubric_signals:
+  - kubernetes_understanding
+  - troubleshooting_root_cause
+  - validation_discipline

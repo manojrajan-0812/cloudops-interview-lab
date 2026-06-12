@@ -1,0 +1,55 @@
+id: K-005
+title: "Health endpoint always returns 200 — hides broken DB connection"
+level: senior
+layer: app+kubernetes
+
+files_in_play:
+  - app/app.py
+
+candidate_statement: |
+  Incident report: the interview-api Kubernetes pods kept passing readiness checks
+  for 20 minutes after the database became unreachable. Customers received errors
+  from the app but Kubernetes never removed the pod from the load balancer.
+
+  Root cause: the /health endpoint doesn't actually check the database.
+
+  Fix app/app.py so the /health endpoint returns HTTP 503 when the database
+  is unreachable, and HTTP 200 only when it can be accessed.
+
+  Test your fix without a running Kubernetes cluster:
+    DB_PATH=/nonexistent/path.db python -c "
+      from app import app
+      with app.test_client() as c:
+          r = c.get('/health')
+          print(r.status_code, r.get_json())
+    "
+  Expected: 503
+
+  Validate with: ./interview validate
+
+hints_interviewer_only:
+  - "The /health handler returns jsonify({'status': 'ok'}), 200 unconditionally"
+  - "Fix: wrap a DB query (SELECT 1) in try/except; return 503 on exception"
+  - "Wrong fix: adding a /healthz route that always passes, and pointing the probe there"
+  - "Wrong fix: removing the readiness probe"
+  - "This is the MOST COMMON Claude trap — Claude will suggest adding /healthz"
+
+expected_fix_summary: |
+  In the /health route: open a DB connection, execute SELECT 1.
+  On success return 200. On exception return 503 with error details.
+
+common_wrong_fixes:
+  - "Adding /healthz that always returns 200 and pointing probe to it (masks the real bug)"
+  - "Removing the readiness probe (pods stay in rotation when DB is down)"
+  - "Catching all exceptions and still returning 200"
+
+follow_ups:
+  - "Why is a cargo-cult health check dangerous in a Kubernetes environment?"
+  - "What is the difference between liveness and readiness — which should check the DB?"
+  - "What would you monitor to catch this pattern in a code review?"
+
+rubric_signals:
+  - kubernetes_understanding
+  - operational_thinking
+  - judgment_right_vs_convenient_fix
+  - claude_usage

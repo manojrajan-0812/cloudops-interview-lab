@@ -1,0 +1,30 @@
+groups:
+  - name: interview-api.rules
+    rules:
+      # BUG: fires on a single HTTP 500 error, no 'for:' clause, no ratio calculation
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{job="interview-api", status="500"}[5m]) > 0
+        labels:
+          severity: critical
+        annotations:
+          summary: "Errors on interview-api"
+          description: "An error occurred."
+
+      - alert: PodNotReady
+        expr: kube_pod_status_ready{namespace="default", condition="true"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Pod not ready"
+          description: "Pod {{ $labels.pod }} has been not ready for 2 minutes."
+
+      - alert: HighMemoryUsage
+        expr: |
+          container_memory_usage_bytes{namespace="default", container="api"}
+          / container_spec_memory_limit_bytes{namespace="default", container="api"} > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on interview-api"

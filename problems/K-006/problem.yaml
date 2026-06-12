@@ -1,0 +1,45 @@
+id: K-006
+title: "No PodDisruptionBudget — node drain takes down all replicas"
+level: senior
+layer: kubernetes
+
+files_in_play:
+  - k8s/pdb.yaml  (must be created)
+
+candidate_statement: |
+  During a recent node maintenance window, all interview-api pods were evicted
+  simultaneously when the node was drained, causing a full service outage for
+  90 seconds. The deployment has 2 replicas and a rolling update strategy, but
+  that only applies to deployments — not to node drains.
+
+  Fix this by ensuring at least 1 replica is always available during node
+  maintenance or cluster upgrades.
+
+  Validate with: ./interview validate
+
+hints_interviewer_only:
+  - "The fix is adding a PodDisruptionBudget (PDB), not changing maxSurge/maxUnavailable"
+  - "maxSurge/maxUnavailable control rolling deployments — PDB controls voluntary disruptions"
+  - "Fix: create k8s/pdb.yaml with minAvailable: 1, selector matching app: interview-api"
+  - "Common Claude trap: Claude may suggest changing rollingUpdate settings — that's wrong"
+
+expected_fix_summary: |
+  Create k8s/pdb.yaml with:
+    spec.minAvailable: 1
+    spec.selector.matchLabels.app: interview-api
+
+common_wrong_fixes:
+  - "Increasing maxSurge in the deployment (affects rollouts, not node drains)"
+  - "Setting replicas to 3 without a PDB (still drainable all at once)"
+  - "Using maxUnavailable: 0 in rollingUpdate (doesn't protect against node eviction)"
+
+follow_ups:
+  - "What is the difference between a PodDisruptionBudget and rollingUpdate settings?"
+  - "When would a PDB NOT protect you (e.g., node failure vs. node drain)?"
+  - "What value of minAvailable would you choose for a 2-replica deployment and why?"
+
+rubric_signals:
+  - kubernetes_understanding
+  - reliability_design
+  - judgment_right_vs_convenient_fix
+  - claude_usage

@@ -1,0 +1,37 @@
+id: K-004
+title: "Ingress routes to wrong service port — 503 on all external requests"
+level: mid
+layer: kubernetes
+
+files_in_play:
+  - k8s/ingress.yaml
+  - k8s/service.yaml
+
+candidate_statement: |
+  External requests to interview-api.local return 503. Internal pod-to-pod
+  calls work fine. The ingress controller logs show "upstream connect error".
+
+  Investigate the ingress and service configuration and fix the port mismatch.
+  Validate with: ./interview validate
+
+hints_interviewer_only:
+  - "ingress.yaml backend port is 8080"
+  - "service.yaml exposes port 80 (targetPort 8080)"
+  - "The ingress should reference the Service's port (80), not the container port"
+  - "Fix: change ingress backend port from 8080 to 80"
+
+expected_fix_summary: |
+  Change ingress.yaml backend service port from 8080 to 80,
+  which is the port the Service exposes (it internally routes to 8080).
+
+common_wrong_fixes:
+  - "Changing service.yaml port to 8080 (breaks other consumers of port 80)"
+  - "Changing targetPort to 80 (breaks routing — app listens on 8080)"
+
+follow_ups:
+  - "What is the difference between port, targetPort, and nodePort in a Service?"
+  - "How does an Ingress controller resolve backend ports?"
+
+rubric_signals:
+  - kubernetes_understanding
+  - troubleshooting_root_cause

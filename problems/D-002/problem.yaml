@@ -1,0 +1,43 @@
+id: D-002
+title: "Multi-stage Dockerfile leaks build secret into runtime image"
+level: senior
+layer: docker
+
+files_in_play:
+  - docker/Dockerfile.multistage
+
+candidate_statement: |
+  The security team found that our production container image contains a private
+  PyPI index URL (used during the build) in the runtime environment. This means
+  anyone who inspects the running container can extract our internal package
+  registry credentials.
+
+  Investigate docker/Dockerfile.multistage and fix the secret leak.
+  The fix must not break the build — the app must still install correctly.
+
+  Validate with: ./interview validate
+
+hints_interviewer_only:
+  - "ENV PIP_EXTRA_INDEX_URL is set in the build stage — ENV vars persist into runtime layers and downstream images"
+  - "Fix: use ARG instead of ENV (ARG values don't persist past the build stage)"
+  - "Common wrong fix: moving ENV to RUN — still bakes into the layer"
+
+expected_fix_summary: |
+  Change ENV PIP_EXTRA_INDEX_URL to ARG PIP_EXTRA_INDEX_URL.
+  ARG is build-time only and does not appear in the final image environment.
+
+common_wrong_fixes:
+  - "Using RUN export PIP_EXTRA_INDEX_URL=... (still leaks via layer history)"
+  - "Removing the pip install step (breaks the build)"
+  - "Flattening the image with --squash (hides in history but doesn't truly remove)"
+
+follow_ups:
+  - "What is the difference between ARG and ENV in a Dockerfile?"
+  - "How would you verify the secret is not in the final image?"
+  - "What other secrets might leak through build layers?"
+
+rubric_signals:
+  - docker_understanding
+  - security_awareness
+  - judgment_right_vs_convenient_fix
+  - claude_usage

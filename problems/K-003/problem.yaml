@@ -1,0 +1,40 @@
+id: K-003
+title: "Deployment missing resource limits — pods get OOMKilled under load"
+level: mid
+layer: kubernetes
+
+files_in_play:
+  - k8s/deployment.yaml
+
+candidate_statement: |
+  Under load testing, the interview-api pods are being OOMKilled. The on-call
+  engineer suspects the pods have no memory limits and are consuming all available
+  node memory.
+
+  Inspect k8s/deployment.yaml and add appropriate resource requests and limits.
+  Validate with: ./interview validate
+
+hints_interviewer_only:
+  - "The deployment has no resources: block at all"
+  - "Fix: add both requests and limits for cpu and memory"
+  - "Sensible values: requests cpu=100m memory=128Mi, limits cpu=500m memory=256Mi"
+  - "Wrong fix: only adding limits without requests (scheduler can't plan properly)"
+
+expected_fix_summary: |
+  Add resources.requests and resources.limits for cpu and memory.
+  Both requests and limits must be present for the validator to pass.
+
+common_wrong_fixes:
+  - "Adding only limits (missing requests)"
+  - "Setting limits too low (causes throttling)"
+  - "Setting limits to 0 or unlimited"
+
+follow_ups:
+  - "What's the difference between requests and limits in Kubernetes?"
+  - "What happens when a pod exceeds its memory limit?"
+  - "How do you size requests and limits for a service you've never profiled?"
+
+rubric_signals:
+  - kubernetes_understanding
+  - operational_thinking
+  - claude_usage
