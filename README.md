@@ -57,7 +57,7 @@ Candidates can use either of the following AI assistants during the interview:
 
 **Option 1 — Claude (recommended):** Open a new terminal tab and run:
 ```bash
-cd /Users/rajan/playground/cloudops-interview-lab
+cd /path/to/cloudops-interview-lab
 claude
 ```
 
