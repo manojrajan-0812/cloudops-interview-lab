@@ -38,6 +38,32 @@ The exercise tests two things simultaneously:
 
 ## Setting Up on a New Laptop
 
+### Option A — Automated setup (recommended)
+
+Download and run the setup script. It installs every dependency, clones the repo, and verifies the installation in one shot. Safe to re-run — skips anything already installed.
+
+**If the repo is not yet cloned (fresh machine):**
+```bash
+curl -fsSL https://raw.githubusercontent.com/manojrajan-0812/cloudops-interview-lab/main/setup.sh -o setup.sh
+chmod +x setup.sh
+./setup.sh
+```
+
+**If the repo is already cloned:**
+```bash
+cd cloudops-interview-lab
+./setup.sh
+```
+
+When the script finishes you will see:
+```
+✅ Setup complete — this laptop is ready for interviews!
+```
+
+---
+
+### Option B — Manual setup (step by step)
+
 Follow these steps in order on a fresh macOS machine.
 
 ### Step 1 — Install system dependencies
