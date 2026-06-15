@@ -222,7 +222,8 @@ def cmd_validate(args):
     passed, message = run_validator(problem_id)
 
     if passed:
-        state["solved"].append(problem_id)
+        if problem_id not in state["solved"]:
+            state["solved"].append(problem_id)
         save_state(state)
         print(f"\n✅ Problem solved successfully.")
         print(f"   {message}")
