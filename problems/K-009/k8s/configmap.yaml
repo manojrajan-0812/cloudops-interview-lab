@@ -7,5 +7,4 @@ data:
   LOG_LEVEL: "INFO"
   MAX_WORKERS: "2"
   FEATURE_FLAGS: "enable_cache=false"
-  # BUG: secrets do not belong in ConfigMaps
   API_KEY: "supersecret123"

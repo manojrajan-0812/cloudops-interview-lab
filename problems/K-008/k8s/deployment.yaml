@@ -16,7 +16,6 @@ spec:
         app: interview-api
     spec:
       serviceAccountName: interview-api-sa
-      # BUG: running as root
       securityContext:
         runAsUser: 0
         fsGroup: 0
@@ -49,7 +48,6 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 15
             failureThreshold: 3
-          # BUG: privileged: true + no allowPrivilegeEscalation: false
           securityContext:
             privileged: true
             allowPrivilegeEscalation: true

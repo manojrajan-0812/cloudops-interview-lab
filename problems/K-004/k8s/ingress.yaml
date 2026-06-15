@@ -16,6 +16,5 @@ spec:
             backend:
               service:
                 name: interview-api-svc
-                # BUG: should be 80 (the Service port), not 8080 (the container port)
                 port:
                   number: 8080

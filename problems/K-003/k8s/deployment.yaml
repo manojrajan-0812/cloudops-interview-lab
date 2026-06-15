@@ -28,7 +28,6 @@ spec:
           env:
             - name: DB_PATH
               value: /tmp/interview.db
-          # BUG: no resources block — pod will consume unlimited memory and CPU
           readinessProbe:
             httpGet:
               path: /health

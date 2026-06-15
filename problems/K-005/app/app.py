@@ -60,8 +60,6 @@ def data():
 
 @app.route("/health")
 def health():
-    # BUG: always returns 200 regardless of DB state.
-    # Kubernetes will keep routing traffic to this pod even when the DB is down.
     return jsonify({"status": "ok"}), 200
 
 

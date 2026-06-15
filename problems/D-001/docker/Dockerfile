@@ -1,4 +1,3 @@
-# BROKEN: unpinned base image + runs as root
 FROM python:latest
 
 WORKDIR /app

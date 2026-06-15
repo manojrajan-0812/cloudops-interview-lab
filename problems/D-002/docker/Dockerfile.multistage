@@ -1,9 +1,7 @@
-# BROKEN: ENV in build stage leaks into runtime image
 FROM python:3.11-slim AS builder
 
 WORKDIR /build
 
-# BUG: ENV persists into all downstream layers and the final runtime image
 ENV PIP_EXTRA_INDEX_URL="https://user:hunter2@internal.pypi.example.com/simple"
 
 COPY app/requirements.txt .

@@ -1,3 +1,1 @@
-# BUG: This file is empty — no PodDisruptionBudget is defined.
-# Consequence: during node drain or cluster upgrade, all pods can be evicted simultaneously.
-# Fix: add a PodDisruptionBudget with minAvailable: 1.
+# PodDisruptionBudget configuration

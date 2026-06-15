@@ -1,7 +1,6 @@
 groups:
   - name: interview-api.rules
     rules:
-      # BUG: fires on a single HTTP 500 error, no 'for:' clause, no ratio calculation
       - alert: HighErrorRate
         expr: rate(http_requests_total{job="interview-api", status="500"}[5m]) > 0
         labels:

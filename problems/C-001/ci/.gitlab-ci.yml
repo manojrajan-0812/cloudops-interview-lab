@@ -36,7 +36,6 @@ deploy-staging:
   only:
     - main
 
-# BUG: no 'when: manual' — this deploys automatically after staging passes
 deploy-production:
   stage: deploy-production
   image: bitnami/kubectl:latest

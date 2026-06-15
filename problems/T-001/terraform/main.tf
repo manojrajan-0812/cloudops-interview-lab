@@ -36,7 +36,6 @@ resource "local_file" "app_config" {
   filename = "${path.module}/output/app_config.txt"
 }
 
-# BUG: timestamp() is evaluated on every plan — this resource is ALWAYS destroyed+recreated
 resource "null_resource" "deployment" {
   triggers = {
     always_run = timestamp()

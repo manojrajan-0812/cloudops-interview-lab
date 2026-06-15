@@ -4,7 +4,6 @@ metadata:
   name: interview-api-svc
   namespace: default
 spec:
-  # BUG: selector doesn't match deployment label (app: interview-api)
   selector:
     app: api-service
   ports:
