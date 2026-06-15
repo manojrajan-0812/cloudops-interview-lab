@@ -6,7 +6,7 @@ from tools.lib import REPO_ROOT, ok, fail
 _TEST_SCRIPT = """
 import os, sys, importlib
 os.environ["DB_PATH"] = "{db_path}"
-sys.path.insert(0, ".")
+sys.path.insert(0, "app")
 import app as a
 importlib.reload(a)
 with a.app.test_client() as c:
