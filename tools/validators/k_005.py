@@ -4,11 +4,13 @@ import subprocess
 from tools.lib import REPO_ROOT, ok, fail
 
 _TEST_SCRIPT = """
-import os, sys, importlib
+import os, sys, logging
 os.environ["DB_PATH"] = "{db_path}"
+logging.disable(logging.CRITICAL)
+import structlog
+structlog.configure(logger_factory=structlog.PrintLoggerFactory(file=sys.stderr))
 sys.path.insert(0, "app")
 import app as a
-importlib.reload(a)
 with a.app.test_client() as c:
     r = c.get("/health")
     print(r.status_code)
