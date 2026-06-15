@@ -26,6 +26,7 @@ import yaml
 REPO_ROOT = Path(__file__).parent.resolve()
 STATE_FILE = REPO_ROOT / ".interview-state"
 PROBLEMS_DIR = REPO_ROOT / "problems"
+TIME_LIMIT_SECONDS = 12 * 60  # 12 minutes
 
 # ─── Problem composition rules ─────────────────────────────────────────────
 
@@ -182,8 +183,12 @@ def cmd_start(args):
     problem_id = queue[0]
     apply_problem(problem_id)
 
-    print(f"\n🚀 Interview started — level: {level.upper()}")
-    print(f"   {len(queue)} problems assigned. Good luck!\n")
+    print("\n" + "=" * 60)
+    print("  All the best for your AI-assisted coding interview.")
+    print("  You have 12 minutes to complete the task.")
+    print("  You may take help from any AI assistant.")
+    print("  Claude is set up on this laptop.")
+    print("=" * 60 + "\n")
     print_problem(problem_id, 1, len(queue))
 
 
@@ -213,10 +218,16 @@ def cmd_validate(args):
         if remaining > 0:
             print(f"\n   Run './interview next' to continue ({remaining} problem(s) remaining).")
         else:
-            elapsed_str = elapsed(state["started_at"])
-            print(f"\n🎉 All {total} problems complete! Total time: {elapsed_str}")
-            solved_count = len(state["solved"])
-            print(f"   Solved: {solved_count}/{total}")
+            delta = int(time.time() - state["started_at"])
+            m, s = divmod(delta, 60)
+            elapsed_str = f"{m}m {s:02d}s"
+            if delta <= TIME_LIMIT_SECONDS:
+                print(f"\n🎉 Congratulations! You have successfully passed the AI-assisted coding interview.")
+                print(f"   Time taken: {elapsed_str}  |  Solved: {len(state['solved'])}/{total}")
+            else:
+                print(f"\n⏱  You have taken {elapsed_str} to complete the AI-assisted coding interview.")
+                print(f"   The expected time was 12 minutes.")
+                print(f"   Thank you for your attempt — better luck next time.")
     else:
         print(f"\n❌ Validation failed.")
         print(f"   {message}")
@@ -239,7 +250,11 @@ def cmd_next(args):
         sys.exit(1)
 
     if idx + 1 >= total:
-        print("✅ You are on the last problem. Run './interview validate' to complete it.")
+        if len(state.get("solved", [])) >= total:
+            print("\nYou have finished the AI-assisted coding interview.")
+            print("Run ./interview reset to restart.")
+        else:
+            print("✅ You are on the last problem. Run './interview validate' to complete it.")
         return
 
     state["current_idx"] = idx + 1
