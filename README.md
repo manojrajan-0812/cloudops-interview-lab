@@ -66,12 +66,10 @@ sqlite3 --version
 ### Step 2 — Install Claude Code (recommended AI assistant)
 
 ```bash
-npm install -g @anthropic-ai/claude-code
+brew install claude
 claude --version
 ```
 
-> If `npm` is not available: `brew install node`
->
 > Claude Code requires an Anthropic account. Sign in with `claude` after installation.
 > Candidates can still use browser-based AI (ChatGPT, Gemini) if Claude Code is not set up.
 
