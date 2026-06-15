@@ -38,7 +38,14 @@ def validate():
             "Add selector.matchLabels.app: interview-api to target the correct pods."
         )
 
-    if min_available is not None and int(str(min_available)) < 1:
-        return fail(f"❌ minAvailable is {min_available} — must be at least 1.")
+    if min_available is not None:
+        try:
+            if int(str(min_available)) < 1:
+                return fail(f"❌ minAvailable is {min_available} — must be at least 1.")
+        except ValueError:
+            return fail(
+                f"❌ minAvailable value '{min_available}' is not a valid integer.\n"
+                "Use a whole number (e.g. minAvailable: 1), not a percentage."
+            )
 
     return ok(f"PodDisruptionBudget exists with minAvailable={min_available}, selector={selector}.")

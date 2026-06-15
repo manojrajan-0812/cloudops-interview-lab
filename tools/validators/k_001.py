@@ -31,7 +31,7 @@ def validate():
             f"Current value means the probe fires before the app is ready."
         )
 
-    if threshold < 2:
+    if threshold < 3:
         return fail(
             f"❌ livenessProbe.failureThreshold is {threshold}.\n"
             f"A single missed check should not immediately restart the pod.\n"

@@ -19,12 +19,15 @@ def validate():
     expr = high_error.get("expr", "")
     for_clause = high_error.get("for")
 
-    # Check: must not be a simple rate > 0 (zero threshold)
-    if re.search(r'>\s*0\b', expr) and "0\." not in expr:
-        return fail(
-            "❌ HighErrorRate fires when error rate > 0 (any single error triggers it).\n"
-            "Use a percentage threshold (e.g. > 0.05) by dividing by total request rate."
-        )
+    # Check: threshold must not be zero. Extract the numeric value after '>' directly
+    # to avoid false-positives from word-boundary matching on decimals like 0.05.
+    threshold_match = re.search(r">\s*([\d.]+)", expr)
+    if threshold_match:
+        if float(threshold_match.group(1)) == 0:
+            return fail(
+                "❌ HighErrorRate fires when error rate > 0 (any single error triggers it).\n"
+                "Use a percentage threshold (e.g. > 0.05) by dividing by total request rate."
+            )
 
     # Check: must have a 'for:' clause
     if not for_clause:
@@ -34,15 +37,14 @@ def validate():
             "Add 'for: 5m' (or similar) to require the condition to persist."
         )
 
-    # Check: must be ratio-based (contains division) OR has a non-zero numeric threshold
-    has_division = "/" in expr
-    threshold_match = re.search(r'>\s*([\d.]+)', expr)
-    threshold_val = float(threshold_match.group(1)) if threshold_match else 0
-
-    if not has_division and threshold_val == 0:
-        return fail(
-            "❌ The expression should calculate an error *rate* or *ratio*, not just count.\n"
-            "Example: sum(rate(errors[5m])) / sum(rate(requests[5m])) > 0.05"
-        )
+    # Check: must be ratio-based. Strip label selectors ({...}) before checking
+    # for division to avoid false-positives from slashes in job labels.
+    expr_no_labels = re.sub(r"\{[^}]*\}", "", expr)
+    if "/" not in expr_no_labels:
+        if threshold_match is None or float(threshold_match.group(1)) == 0:
+            return fail(
+                "❌ The expression should calculate an error ratio, not just a raw count.\n"
+                "Example: sum(rate(errors[5m])) / sum(rate(requests[5m])) > 0.05"
+            )
 
     return ok(f"HighErrorRate alert has a meaningful threshold and for: {for_clause}.")
