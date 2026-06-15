@@ -42,7 +42,7 @@ The exercise tests two things simultaneously:
 
 ```bash
 python3 --version    # 3.9+
-pip3 install pyyaml flask
+pip3 install pyyaml flask structlog prometheus-client
 git --version
 ```
 
@@ -74,7 +74,24 @@ claude
 ./interview start --level senior   # for Senior candidates
 ```
 
-The candidate sees a welcome message, the 12-minute time limit, and their first problem.
+The runner will prompt for the candidate's name, then show a welcome message, the 12-minute time limit, and the first problem.
+
+```
+Enter your name: Sarah Johnson
+
+============================================================
+  All the best, Sarah Johnson!
+  You have 12 minutes to complete the task.
+  ...
+============================================================
+```
+
+To preview the full problem bank before starting:
+
+```bash
+./interview list                   # show all 15 problems
+./interview list --level senior    # filter by level
+```
 
 ### Two-terminal workflow
 
@@ -102,7 +119,7 @@ Terminal 1 (interview)             Terminal 2 (work)
 ```bash
 ./interview validate     # check if the current fix is correct
 ./interview next         # move to the next problem (after validating)
-./interview status       # show progress and elapsed time
+./interview status       # show progress, elapsed time, and remaining time
 ```
 
 ### Interviewer: reset for next candidate
@@ -127,14 +144,21 @@ Terminal 1 (interview)             Terminal 2 (work)
 
 ## Scoring
 
-10 categories scored 1–5. Key categories are weighted:
+11 categories scored 1–5. Key categories are weighted:
 
 - **Troubleshooting & root cause** — 2×
 - **Validation discipline** — 2×
 - **Claude Code usage quality** — 2×
 - **Judgment: right fix vs. convenient fix** — 3× (senior only)
 
-See `interviewer/rubric.md` for the full rubric and `interviewer/interviewer-guide.md` for observation tips, hints, and follow-up questions.
+**Formula:** `Σ(cat1–6) + 2×cat7 + 2×cat8 + 2×cat9 + cat10 + (3×cat11 senior only)`
+
+| Level | Max score | Strong hire | Lean hire | Borderline |
+|---|---|---|---|---|
+| Mid | 65 | ≥ 50 | 40–49 | 30–39 |
+| Senior | 80 | ≥ 62 | 50–61 | 37–49 |
+
+See `interviewer/rubric.md` for the full rubric, `interviewer/interviewer-guide.md` for observation tips and follow-up questions, and `interviewer/solutions/` for per-problem solution guides.
 
 ---
 
@@ -170,7 +194,7 @@ interviewer/            Rubric, interviewer guide, solution guides (not shown to
 
 ## Candidate Instructions
 
-> **If you are a candidate:** the interviewer will run `./interview start` and your first problem will appear in the terminal. You have 12 minutes to complete 5 problems.
+> **If you are a candidate:** the interviewer will run `./interview start`. You will be prompted for your name, then your first problem appears. You have 12 minutes to complete 5 problems.
 >
 > **To use Claude:** open a new terminal tab, `cd` to this directory, and type `claude`.
 > **To use another AI:** open ChatGPT or Gemini in a browser.
