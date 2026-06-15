@@ -76,6 +76,27 @@ claude
 
 The candidate sees a welcome message, the 12-minute time limit, and their first problem.
 
+### Two-terminal workflow
+
+The recommended setup uses two terminal windows side by side:
+
+| Terminal | Purpose |
+|---|---|
+| **Terminal 1** — Interview | `./interview start`, `./interview validate`, `./interview next` |
+| **Terminal 2** — Work | Claude (`claude`), your editor, or a browser AI — fix files here |
+
+```
+Terminal 1 (interview)             Terminal 2 (work)
+──────────────────────             ─────────────────────────────
+./interview start --level mid      # open Claude or browser AI
+  → problem appears                # read the broken file
+                                   # implement the fix
+./interview validate
+  → ✅ pass or ❌ hint             # adjust fix if needed
+./interview next
+  → next problem                   # move to the next broken file
+```
+
 ### Candidate: investigate → fix → validate → repeat
 
 ```bash

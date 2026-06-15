@@ -228,7 +228,8 @@ def cmd_validate(args):
         print(f"   {message}")
         remaining = total - idx - 1
         if remaining > 0:
-            print(f"\n   Run './interview next' to continue ({remaining} problem(s) remaining).")
+            print(f"\n   ▶  Run './interview next' to continue  ({remaining} problem(s) remaining)")
+            print(f"   {'─' * 49}")
         else:
             delta = int(time.time() - state["started_at"])
             m, s = divmod(delta, 60)
@@ -287,11 +288,23 @@ def cmd_status(args):
     total = len(state["queue"])
     current_id = state["queue"][idx]
     solved = state.get("solved", [])
-    elapsed_str = elapsed(state["started_at"])
+    delta = int(time.time() - state["started_at"])
+    m_e, s_e = divmod(delta, 60)
+    elapsed_str = f"{m_e}m {s_e:02d}s"
+
+    if delta <= TIME_LIMIT_SECONDS:
+        remaining_secs = TIME_LIMIT_SECONDS - delta
+        m_r, s_r = divmod(remaining_secs, 60)
+        remaining_str = f"{m_r}m {s_r:02d}s"
+    else:
+        over_secs = delta - TIME_LIMIT_SECONDS
+        m_o, s_o = divmod(over_secs, 60)
+        remaining_str = f"OVERTIME +{m_o}m {s_o:02d}s"
 
     print(f"\n📊 Interview Status")
-    print(f"   Level    : {state['level'].upper()}")
-    print(f"   Elapsed  : {elapsed_str}")
+    print(f"   Level     : {state['level'].upper()}")
+    print(f"   Elapsed   : {elapsed_str}")
+    print(f"   Remaining : {remaining_str}")
     print(f"   Progress : {len(solved)}/{total} solved")
     print(f"   Current  : Problem {idx+1}/{total} — {current_id}")
     print()
