@@ -106,10 +106,16 @@ def pick_problems(level):
     cfg = LEVEL_POOLS[level]
     if level == "mid":
         pool = cfg["ids"]
+        if len(pool) < cfg["count"]:
+            print(f"⚠️  Warning: mid pool has only {len(pool)} problems, need {cfg['count']}.")
         chosen = random.sample(pool, min(cfg["count"], len(pool)))
     else:
-        seniors = random.sample(cfg["senior_ids"], cfg["senior_count"])
-        mids = random.sample(cfg["mid_ids"], cfg["mid_count"])
+        if len(cfg["senior_ids"]) < cfg["senior_count"]:
+            print(f"⚠️  Warning: senior pool has only {len(cfg['senior_ids'])} senior problems, need {cfg['senior_count']}.")
+        if len(cfg["mid_ids"]) < cfg["mid_count"]:
+            print(f"⚠️  Warning: mid pool has only {len(cfg['mid_ids'])} mid problems, need {cfg['mid_count']}.")
+        seniors = random.sample(cfg["senior_ids"], min(cfg["senior_count"], len(cfg["senior_ids"])))
+        mids = random.sample(cfg["mid_ids"], min(cfg["mid_count"], len(cfg["mid_ids"])))
         chosen = seniors + mids
         random.shuffle(chosen)
     return chosen
@@ -317,6 +323,28 @@ def cmd_status(args):
     print()
 
 
+def cmd_list(args):
+    level_filter = args.level
+    print()
+    for level, cfg in LEVEL_POOLS.items():
+        if level_filter and level != level_filter:
+            continue
+        all_ids = cfg.get("ids") or (cfg.get("senior_ids", []) + cfg.get("mid_ids", []))
+        unique_ids = list(dict.fromkeys(all_ids))
+        print(f"  {'MID' if level == 'mid' else 'SENIOR'} problems ({len(unique_ids)}):")
+        for pid in sorted(unique_ids):
+            prob_file = PROBLEMS_DIR / pid / "problem.yaml"
+            if prob_file.exists():
+                with open(prob_file) as f:
+                    prob = yaml.safe_load(f)
+                tag = f"[{prob.get('level','?').upper()}]"
+                layer = prob.get("layer", "")
+                print(f"    {pid:8}  {tag:10}  {prob.get('title','')[:55]}  ({layer})")
+            else:
+                print(f"    {pid:8}  (problem.yaml not found)")
+        print()
+
+
 def cmd_reset(args):
     print("🔄 Resetting interview environment...")
 
@@ -349,6 +377,7 @@ Commands:
   validate                   Check if the current problem is correctly fixed
   next [--force]             Move to the next problem (--force skips validation)
   status                     Show current progress and elapsed time
+  list [--level mid|senior]  List all problems in the bank (interviewer use)
   reset                      Restore the environment for the next candidate
         """
     )
@@ -364,6 +393,11 @@ Commands:
                         help="Skip validation check (interviewer use only)")
 
     sub.add_parser("status")
+
+    p_list = sub.add_parser("list")
+    p_list.add_argument("--level", choices=["mid", "senior"], default=None,
+                        help="Filter by level (default: show all)")
+
     sub.add_parser("reset")
 
     args = parser.parse_args()
@@ -376,6 +410,7 @@ Commands:
         "validate": cmd_validate,
         "next": cmd_next,
         "status": cmd_status,
+        "list": cmd_list,
         "reset": cmd_reset,
     }
     dispatch[args.command](args)

@@ -22,7 +22,7 @@ spec:
       containers:
         - name: api
           image: interview-api:latest
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
           env:

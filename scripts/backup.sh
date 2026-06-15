@@ -18,8 +18,8 @@ fi
 
 mkdir -p "${BACKUP_DIR}"
 
-cp "${DB_PATH}" "${BACKUP_FILE}" || {
-  log "ERROR: Backup copy failed"
+sqlite3 "${DB_PATH}" ".backup '${BACKUP_FILE}'" || {
+  log "ERROR: Backup failed"
   exit 1
 }
 
