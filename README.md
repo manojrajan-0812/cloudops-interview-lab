@@ -303,6 +303,17 @@ interviewer/            Rubric, interviewer guide, solution guides (not shown to
 
 ---
 
+## For Teams Learning to Use AI Coding Assistants
+
+`PROMPT.md` in this repo is the AI prompt that was used to build this entire project with Claude Code. It is included as a reference example of how to write effective prompts for non-trivial engineering tasks.
+
+Key lessons it demonstrates:
+- Combine constraints + design decisions + explicit "do not" rules + a verification checklist
+- Document what failed (wrong validator design, hardcoded paths, bad probe configs) — not just what to build
+- The more specific and opinionated the prompt, the better the output
+
+---
+
 ## License
 
 MIT
