@@ -53,7 +53,15 @@ git clone https://github.com/manojrajan-0812/cloudops-interview-lab.git
 cd cloudops-interview-lab
 ```
 
-Claude Code should already be installed on the interview laptop and opened in VS Code or the terminal.
+Candidates can use either of the following AI assistants during the interview:
+
+**Option 1 — Claude (recommended):** Open a new terminal tab and run:
+```bash
+cd /Users/rajan/playground/cloudops-interview-lab
+claude
+```
+
+**Option 2 — Any browser-based AI:** Open [ChatGPT](https://chatgpt.com) or [Gemini](https://gemini.google.com) in a browser.
 
 ---
 
@@ -141,9 +149,12 @@ interviewer/            Rubric, interviewer guide, solution guides (not shown to
 
 ## Candidate Instructions
 
-> **If you are a candidate:** start here — the interviewer will run `./interview start` and your first problem will appear in the terminal.
+> **If you are a candidate:** the interviewer will run `./interview start` and your first problem will appear in the terminal. You have 12 minutes to complete 5 problems.
 >
-> Use Claude Code (open in VS Code sidebar or terminal) to help you understand and debug. Read files yourself before applying Claude's suggestions. Always run `./interview validate` after making a fix.
+> **To use Claude:** open a new terminal tab, `cd` to this directory, and type `claude`.
+> **To use another AI:** open ChatGPT or Gemini in a browser.
+>
+> Read files yourself before applying any AI suggestion. Always run `./interview validate` after making a fix.
 >
 > **Do not open the `interviewer/` folder.**
 
