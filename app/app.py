@@ -1,22 +1,30 @@
 import os
 import time
 import sqlite3
-import logging
-from flask import Flask, jsonify, request
+import structlog
+from flask import Flask, jsonify, request, Response
+from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='{"time": "%(asctime)s", "level": "%(levelname)s", "message": "%(message)s"}'
-)
-logger = logging.getLogger(__name__)
+log = structlog.get_logger()
 
 app = Flask(__name__)
 
 DB_PATH = os.environ.get("DB_PATH", "/tmp/interview.db")
 STARTUP_DELAY = int(os.environ.get("STARTUP_DELAY", "0"))
 
+REQUEST_COUNT = Counter(
+    "http_requests_total",
+    "Total HTTP request count",
+    ["method", "endpoint", "status"],
+)
+REQUEST_LATENCY = Histogram(
+    "http_request_duration_seconds",
+    "HTTP request latency",
+    ["endpoint"],
+)
+
 if STARTUP_DELAY:
-    logger.info(f"Simulating slow start: sleeping {STARTUP_DELAY}s")
+    log.info("slow_start", delay=STARTUP_DELAY)
     time.sleep(STARTUP_DELAY)
 
 
@@ -39,9 +47,19 @@ def init_db():
 
 try:
     init_db()
-    logger.info("Database initialised")
+    log.info("db_init", status="ok")
 except Exception as e:
-    logger.error(f"Database init failed: {e}")
+    log.error("db_init_failed", error=str(e))
+
+
+@app.after_request
+def record_metrics(response):
+    REQUEST_COUNT.labels(
+        method=request.method,
+        endpoint=request.path,
+        status=response.status_code,
+    ).inc()
+    return response
 
 
 @app.route("/")
@@ -51,36 +69,38 @@ def index():
 
 @app.route("/api/data")
 def data():
-    try:
-        conn = get_db()
-        rows = conn.execute("SELECT * FROM records").fetchall()
-        conn.close()
-        return jsonify({"records": [dict(r) for r in rows]})
-    except Exception as e:
-        logger.error(f"Data query failed: {e}")
-        return jsonify({"error": "query failed"}), 500
+    with REQUEST_LATENCY.labels(endpoint="/api/data").time():
+        try:
+            conn = get_db()
+            rows = conn.execute("SELECT * FROM records").fetchall()
+            conn.close()
+            return jsonify({"records": [dict(r) for r in rows]})
+        except Exception as e:
+            log.error("data_query_failed", error=str(e))
+            return jsonify({"error": "query failed"}), 500
 
 
 @app.route("/health")
 def health():
-    """
-    Health check endpoint. Verifies the service AND its dependencies are healthy.
-    Returns 200 if healthy, 503 if any dependency is down.
-    """
     try:
         conn = get_db()
         conn.execute("SELECT 1")
         conn.close()
         return jsonify({"status": "ok", "db": "connected"}), 200
     except Exception as e:
-        logger.error(f"Health check failed: {e}")
+        log.error("health_check_failed", error=str(e))
         return jsonify({"status": "degraded", "db": "unreachable", "error": str(e)}), 503
+
+
+@app.route("/metrics")
+def metrics():
+    return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
 
 
 @app.route("/api/echo", methods=["POST"])
 def echo():
-    data = request.get_json(silent=True) or {}
-    return jsonify({"echo": data})
+    body = request.get_json(silent=True) or {}
+    return jsonify({"echo": body})
 
 
 if __name__ == "__main__":

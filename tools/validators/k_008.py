@@ -17,8 +17,11 @@ def validate():
             "Set runAsUser to a non-zero value (e.g. 1000) and runAsNonRoot: true."
         )
 
-    if pod_sec.get("runAsNonRoot") is False:
-        return fail("❌ Pod securityContext.runAsNonRoot is explicitly false.")
+    if pod_sec.get("runAsNonRoot") is not True:
+        return fail(
+            "❌ Pod securityContext.runAsNonRoot is not set to true.\n"
+            "Set runAsNonRoot: true to prevent the container running as root."
+        )
 
     for c in containers:
         csec = c.get("security", {})

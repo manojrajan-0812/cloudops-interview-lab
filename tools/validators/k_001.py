@@ -24,10 +24,10 @@ def validate():
     delay = liveness.get("initialDelaySeconds", 0)
     threshold = liveness.get("failureThreshold", 1)
 
-    if delay < 20:
+    if delay < 30:
         return fail(
             f"❌ livenessProbe.initialDelaySeconds is {delay}.\n"
-            f"The app takes ~15s to start — initialDelaySeconds should be >= 20.\n"
+            f"The app takes ~15s to start — initialDelaySeconds should be >= 30.\n"
             f"Current value means the probe fires before the app is ready."
         )
 

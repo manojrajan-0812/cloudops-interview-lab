@@ -192,7 +192,7 @@ def cmd_start(args):
     print()
     print("  Option 1 — Claude (recommended):")
     print("    Open a new terminal tab and run:")
-    print("      cd {REPO_ROOT}")
+    print(f"      cd {REPO_ROOT}")
     print("      claude")
     print("    Claude will be available to help you.")
     print()
