@@ -48,4 +48,15 @@ def validate():
                 "Use a whole number (e.g. minAvailable: 1), not a percentage."
             )
 
+    if max_unavailable is not None and min_available is None:
+        try:
+            val = int(str(max_unavailable))
+            if val > 1:
+                return fail(
+                    f"❌ maxUnavailable is {val}, which allows all replicas to be disrupted simultaneously.\n"
+                    "Use 'minAvailable: 1' instead to guarantee at least one pod stays up."
+                )
+        except ValueError:
+            pass  # percentage strings like "50%" are self-scaling — accept them
+
     return ok(f"PodDisruptionBudget exists with minAvailable={min_available}, selector={selector}.")

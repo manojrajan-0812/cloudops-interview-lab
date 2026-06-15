@@ -55,12 +55,12 @@ score = cat1 + cat2 + cat3 + cat4 + cat5 + cat6
 
 | Score | Recommendation |
 |---|---|
-| ≥ 64 | **Strong hire** — recommend to next round |
-| 52–63 | **Lean hire** — discuss specific gaps with hiring manager |
-| 40–51 | **Borderline** — significant gaps; pass unless exceptional in one area |
-| < 40 | **No hire** |
+| ≥ 62 | **Strong hire** — recommend to next round |
+| 50–61 | **Lean hire** — discuss specific gaps with hiring manager |
+| 37–49 | **Borderline** — significant gaps; pass unless exceptional in one area |
+| < 37 | **No hire** |
 
-*Thresholds are set at 77%, 62%, and 46% of max respectively — consistent across both levels.*
+*Thresholds are set at 77%, 62%, and 46% of max — consistent across both levels.*
 
 ---
 
