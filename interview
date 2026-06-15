@@ -175,8 +175,11 @@ def cmd_start(args):
         print("❌ Working tree is not clean. Run './interview reset' first.")
         sys.exit(1)
 
+    candidate = input("\nEnter your name: ").strip() or "Candidate"
+
     queue = pick_problems(level)
     state = {
+        "candidate": candidate,
         "level": level,
         "queue": queue,
         "current_idx": 0,
@@ -190,7 +193,7 @@ def cmd_start(args):
     apply_problem(problem_id)
 
     print("\n" + "=" * 60)
-    print("  All the best for your AI-assisted coding interview.")
+    print(f"  All the best, {candidate}!")
     print("  You have 12 minutes to complete the task.")
     print("=" * 60)
     print()
@@ -241,11 +244,12 @@ def cmd_validate(args):
             delta = int(time.time() - state["started_at"])
             m, s = divmod(delta, 60)
             elapsed_str = f"{m}m {s:02d}s"
+            name = state.get("candidate", "Candidate")
             if delta <= TIME_LIMIT_SECONDS:
-                print(f"\n🎉 Congratulations! You have successfully passed the AI-assisted coding interview.")
+                print(f"\n🎉 Congratulations, {name}! You have successfully passed the AI-assisted coding interview.")
                 print(f"   Time taken: {elapsed_str}  |  Solved: {len(state['solved'])}/{total}")
             else:
-                print(f"\n⏱  You have taken {elapsed_str} to complete the AI-assisted coding interview.")
+                print(f"\n⏱  {name}, you have taken {elapsed_str} to complete the AI-assisted coding interview.")
                 print(f"   The expected time was 12 minutes.")
                 print(f"   Thank you for your attempt — better luck next time.")
     else:
@@ -309,6 +313,7 @@ def cmd_status(args):
         remaining_str = f"OVERTIME +{m_o}m {s_o:02d}s"
 
     print(f"\n📊 Interview Status")
+    print(f"   Candidate : {state.get('candidate', 'Unknown')}")
     print(f"   Level     : {state['level'].upper()}")
     print(f"   Elapsed   : {elapsed_str}")
     print(f"   Remaining : {remaining_str}")
@@ -363,6 +368,7 @@ def cmd_reset(args):
     print("✅ Interview environment reset successfully.")
     print("   Working tree restored to clean baseline.")
     print("   Ready for next candidate.\n")
+    # Note: candidate name was stored only in .interview-state which is now deleted
 
 
 # ─── Entrypoint ────────────────────────────────────────────────────────────
