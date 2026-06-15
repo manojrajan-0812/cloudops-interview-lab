@@ -36,24 +36,98 @@ The exercise tests two things simultaneously:
 
 ---
 
-## Setup
+## Setting Up on a New Laptop
 
-### Prerequisites
+Follow these steps in order on a fresh macOS machine.
 
+### Step 1 — Install system dependencies
+
+**Python 3.9+**
 ```bash
-python3 --version    # 3.9+
-pip3 install pyyaml flask structlog prometheus-client
-git --version
+python3 --version
+# If missing or < 3.9, install via Homebrew:
+brew install python@3.11
 ```
 
-### Clone and initialise
+**Git**
+```bash
+git --version
+# If missing:
+brew install git
+```
+
+**SQLite3** (used by the backup script)
+```bash
+sqlite3 --version
+# Already installed on macOS by default.
+# If missing: brew install sqlite
+```
+
+### Step 2 — Install Claude Code (recommended AI assistant)
+
+```bash
+npm install -g @anthropic-ai/claude-code
+claude --version
+```
+
+> If `npm` is not available: `brew install node`
+>
+> Claude Code requires an Anthropic account. Sign in with `claude` after installation.
+> Candidates can still use browser-based AI (ChatGPT, Gemini) if Claude Code is not set up.
+
+### Step 3 — Clone the repository
 
 ```bash
 git clone https://github.com/manojrajan-0812/cloudops-interview-lab.git
 cd cloudops-interview-lab
 ```
 
-Candidates can use either of the following AI assistants during the interview:
+### Step 4 — Install Python dependencies
+
+```bash
+pip3 install pyyaml flask structlog prometheus-client
+```
+
+### Step 5 — Make the runner executable
+
+```bash
+chmod +x interview
+```
+
+### Step 6 — Verify the setup
+
+```bash
+./interview reset
+```
+
+Expected output:
+```
+✅ Interview environment reset successfully.
+   Working tree restored to clean baseline.
+   Ready for next candidate.
+```
+
+```bash
+./interview list
+```
+
+Expected output: all 15 problems listed with IDs, levels, and titles.
+
+### Step 7 — Run a dry-run before the first candidate
+
+```bash
+echo "Test Candidate" | ./interview start --level mid
+./interview status
+./interview reset
+```
+
+If all three commands complete without errors, the laptop is ready.
+
+---
+
+## AI Assistant Options
+
+Candidates can use either of the following during the interview:
 
 **Option 1 — Claude (recommended):** Open a new terminal tab and run:
 ```bash
