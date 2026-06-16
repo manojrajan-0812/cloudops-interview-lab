@@ -84,14 +84,18 @@ def load_problem(problem_id):
 
 
 def apply_problem(problem_id):
-    """Copy the problem's broken files into the working tree."""
+    """Copy the problem's broken files into the working tree and commit them.
+
+    Committing makes the broken state the new HEAD so that 'git restore .'
+    returns to the broken files rather than the clean baseline — preventing
+    candidates from using git to retrieve the correct answer for free.
+    """
     problem_dir = PROBLEMS_DIR / problem_id
     for item in problem_dir.iterdir():
         if item.name == "problem.yaml":
             continue
         dest_base = REPO_ROOT / item.name
         if item.is_dir():
-            # Copy each file in the subdirectory
             for src_file in item.rglob("*"):
                 if src_file.is_file():
                     rel = src_file.relative_to(item)
@@ -100,6 +104,15 @@ def apply_problem(problem_id):
                     shutil.copy2(src_file, dest)
         else:
             shutil.copy2(item, dest_base)
+
+    # Commit the broken state so HEAD = broken. Any 'git restore .' by the
+    # candidate will restore the broken files, not the clean baseline.
+    subprocess.run(["git", "add", "-A"], cwd=REPO_ROOT, check=True)
+    subprocess.run(
+        ["git", "commit", "-m", f"_broken_state_{problem_id}",
+         "--author=Interview Lab <lab@interview>"],
+        cwd=REPO_ROOT, check=True, capture_output=True,
+    )
 
 
 def pick_problems(level):
@@ -175,6 +188,13 @@ def cmd_start(args):
         print("❌ Working tree is not clean. Run './interview reset' first.")
         sys.exit(1)
 
+    # Record the clean baseline SHA so reset can return here regardless of
+    # how many temporary broken-state commits apply_problem() adds during the session.
+    baseline_sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=REPO_ROOT, capture_output=True, text=True, check=True
+    ).stdout.strip()
+
     candidate = input("\nEnter your name: ").strip() or "Candidate"
 
     queue = pick_problems(level)
@@ -186,6 +206,7 @@ def cmd_start(args):
         "started_at": time.time(),
         "attempts": {},
         "solved": [],
+        "baseline_sha": baseline_sha,
     }
     save_state(state)
 
@@ -353,8 +374,11 @@ def cmd_list(args):
 def cmd_reset(args):
     print("🔄 Resetting interview environment...")
 
-    # Restore all git-tracked files
-    subprocess.run(["git", "reset", "--hard", "HEAD"], cwd=REPO_ROOT, check=True)
+    # Reset to the original clean baseline SHA, discarding any temporary
+    # broken-state commits that apply_problem() added during the session.
+    state = load_state()
+    target_sha = state.get("baseline_sha", "HEAD") if state else "HEAD"
+    subprocess.run(["git", "reset", "--hard", target_sha], cwd=REPO_ROOT, check=True)
     subprocess.run(["git", "clean", "-fdx",
                     "--exclude=.interview-state",
                     "--exclude=terraform/output/",
