@@ -303,6 +303,12 @@ interviewer/            Rubric, interviewer guide, solution guides (not shown to
 
 ---
 
+## Troubleshooting
+
+If something isn't working — setup failures, session errors, validator issues, or known candidate tricks — see **[docs/troubleshooting.md](docs/troubleshooting.md)**.
+
+---
+
 ## For Teams Learning to Use AI Coding Assistants
 
 `PROMPT.md` in this repo is the AI prompt that was used to build this entire project with Claude Code. It is included as a reference example of how to write effective prompts for non-trivial engineering tasks.
