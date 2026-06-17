@@ -6,6 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 An AI-assisted hands-on interview platform for CloudOps/DevOps/SRE candidates. Candidates get 12 minutes to fix 5 randomly assigned broken production-style configurations. The exercise evaluates both engineering judgment and quality of AI tool usage.
 
+## Auto-loaded Files
+
+@interview
+@tools/lib.py
+
 ## Common Commands
 
 **Interview runner (main CLI):**
