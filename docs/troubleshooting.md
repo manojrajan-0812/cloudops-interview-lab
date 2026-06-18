@@ -170,6 +170,26 @@ git pull origin main
 
 ---
 
+### `git reset --hard` passes validation (jailbreak)
+
+A candidate reads `.interview-state` (visible in the repo root), finds the `baseline_sha` field, and runs:
+
+```bash
+git reset --hard <baseline_sha>
+```
+
+This resets the working tree to the clean baseline (which already has all problems correctly configured), making the validator pass without the candidate writing any fix.
+
+This is blocked in the current version. `./interview validate` checks that a `_broken_state_` commit exists between the baseline and HEAD. If the candidate reset to baseline, no such commit exists and validation is refused with a clear message.
+
+Make sure you have the latest version:
+```bash
+git pull origin main
+./interview reset
+```
+
+---
+
 ### `./interview reset` — does not return to clean baseline
 
 If reset leaves unexpected files or a dirty working tree:

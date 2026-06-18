@@ -244,6 +244,23 @@ def cmd_validate(args):
     problem_id = state["queue"][idx]
     total = len(state["queue"])
 
+    # Anti-jailbreak: verify a broken-state commit exists between baseline and HEAD.
+    # If the candidate ran `git reset --hard <baseline_sha>`, HEAD reverts to the
+    # clean baseline and there would be no _broken_state_ commit in the range,
+    # which means validation would pass on unmodified (correct) baseline files.
+    baseline_sha = state.get("baseline_sha", "")
+    if baseline_sha:
+        result = subprocess.run(
+            ["git", "log", "--oneline", "--grep=_broken_state_",
+             f"{baseline_sha}..HEAD"],
+            cwd=REPO_ROOT, capture_output=True, text=True
+        )
+        if not result.stdout.strip():
+            print("⚠️  Working state looks incorrect — the problem files may have been")
+            print("   reset to the clean baseline. Run './interview reset' and ask the")
+            print("   interviewer to restart the session.")
+            sys.exit(1)
+
     state["attempts"].setdefault(problem_id, 0)
     state["attempts"][problem_id] += 1
     save_state(state)
